@@ -1,6 +1,6 @@
 # Spring Boot Kafka Demo
 
-A Spring Boot application demonstrating Kafka producer/consumer integration with a 3-node KRaft cluster.
+A Spring Boot application demonstrating Kafka producer/consumer integration with a 3-node KRaft cluster, plus Kafka Streams for real-time order quantity aggregation.
 
 ---
 
@@ -10,6 +10,7 @@ A Spring Boot application demonstrating Kafka producer/consumer integration with
 - Spring Boot 4.0.6
 - Spring Kafka 4.0.5
 - Apache Kafka (KRaft mode, 3-broker cluster)
+- Kafka Streams
 - Docker & Docker Compose
 - Kafka UI
 
@@ -20,25 +21,29 @@ A Spring Boot application demonstrating Kafka producer/consumer integration with
 ```
 springboot-kafka-demo/
 ├── docker/
-│   └── docker-compose.yml                  # 3-broker Kafka cluster + Kafka UI
+│   └── docker-compose.yml                      # 3-broker Kafka cluster + Kafka UI
 ├── postman collection/
 │   └── springboot-kafka-demo.postman_collection.json
 ├── src/main/java/com/kafka/demo/
 │   ├── config/
-│   │   ├── KafkaProducerConfig.java        # Producer factory & KafkaTemplate
-│   │   ├── KafkaConsumerConfig.java        # Consumer factory & listener container
-│   │   └── KafkaTopicConfig.java           # KafkaAdmin & topic creation
+│   │   ├── KafkaProducerConfig.java            # Producer factory & KafkaTemplate
+│   │   ├── KafkaConsumerConfig.java            # Consumer factory & listener container
+│   │   ├── KafkaStreamsConfig.java             # Kafka Streams configuration
+│   │   └── KafkaTopicConfig.java              # KafkaAdmin & topic creation
 │   ├── controller/
-│   │   └── MessageController.java          # REST endpoint
+│   │   └── OrderController.java               # REST endpoint
 │   ├── producer/
-│   │   └── KafkaMessageProducer.java       # Sends messages to Kafka
+│   │   └── KafkaOrderProducer.java            # Sends orders to Kafka
 │   ├── consumer/
-│   │   └── KafkaMessageConsumer.java       # Listens to messages from Kafka
+│   │   └── KafkaOrderConsumer.java            # Listens to orders from Kafka
+│   ├── streams/
+│   │   └── OrderQuantityStream.java           # Kafka Streams topology (quantity per item)
 │   ├── serializer/
-│   │   ├── MessageSerializer.java          # Custom Kafka serializer (Jackson)
-│   │   └── MessageDeserializer.java        # Custom Kafka deserializer (Jackson)
+│   │   ├── OrderSerializer.java               # Custom Kafka serializer (Jackson)
+│   │   ├── OrderDeserializer.java             # Custom Kafka deserializer (Jackson)
+│   │   └── OrderSerde.java                    # Serde wrapping serializer + deserializer
 │   └── model/
-│       └── Message.java                    # Message payload model
+│       └── Order.java                         # Order payload model
 └── src/main/resources/
     └── application.yml
 ```
@@ -104,6 +109,8 @@ kafka:
     group-id: demo-group
     auto-offset-reset: earliest
     isolation-level: read_committed
+  streams:
+    application-id: order-quantity-streams
   topic:
     demo:
       name: demo-topic
@@ -117,15 +124,15 @@ kafka:
 
 IntelliJ run configurations are pre-configured under `.idea/runConfigurations/`:
 
-| Configuration  | Port | Role     |
-|----------------|------|----------|
-| Instance-8080  | 8080 | Producer |
-| Instance-8082  | 8082 | Consumer |
-| Instance-8083  | 8083 | Consumer |
-| Instance-8084  | 8084 | Consumer |
-| Instance-8085  | 8085 | Consumer |
+| Configuration  | Port |
+|----------------|------|
+| Instance-8080  | 8080 |
+| Instance-8082  | 8082 |
+| Instance-8083  | 8083 |
+| Instance-8084  | 8084 |
+| Instance-8085  | 8085 |
 
-Each instance runs the same application. All consumer instances share `demo-group`, so Kafka distributes the 3 partitions across them.
+Each instance has producer, consumer, and Kafka Streams functionality. All instances share `demo-group` for the regular consumer, so Kafka distributes the 3 partitions across running instances. Each instance also runs an independent Kafka Streams pipeline under `order-quantity-streams`.
 
 To run via Maven on a custom port:
 
@@ -137,38 +144,72 @@ To run via Maven on a custom port:
 
 ## API
 
-### Publish a Message
+### Publish an Order
 
 ```
-POST /api/messages
+POST /api/orders
 Content-Type: application/json
 ```
 
 **Request body with custom ID:**
 ```json
 {
-  "id": "msg-001",
-  "content": "Hello Kafka!"
+  "orderId": "ord-001",
+  "itemName": "Laptop",
+  "quantity": 2
 }
 ```
 
 **Request body with auto-generated ID:**
 ```json
 {
-  "content": "Hello Kafka!"
+  "itemName": "Laptop",
+  "quantity": 2
 }
 ```
 
 **Response (202 Accepted):**
 ```json
 {
-  "id": "msg-001",
-  "content": "Hello Kafka!",
-  "timestamp": "2026-05-05T03:50:00"
+  "orderId": "ord-001",
+  "itemName": "Laptop",
+  "quantity": 2
 }
 ```
 
 Import `postman collection/springboot-kafka-demo.postman_collection.json` into Postman for ready-made requests.
+
+---
+
+## Kafka Streams — Order Quantity Aggregation
+
+`OrderQuantityStream` builds a topology that reads every order from `demo-topic` and maintains a **running total quantity per item name**.
+
+```
+demo-topic
+    └── KStream<orderId, Order>
+            └── groupBy(itemName)
+                    └── aggregate(sum of quantity)
+                            └── KTable<itemName, Long>
+                                    └── toStream → log
+```
+
+Each time a new order arrives, the log prints the updated running total for that item:
+
+```
+[Streams] Item [Laptop] running total quantity: 5
+```
+
+The aggregated state is stored in a local state store named `item-quantity-store`.
+
+**Consumer groups in play:**
+
+| Component         | Consumer Group          | Purpose                         |
+|-------------------|-------------------------|---------------------------------|
+| KafkaOrderConsumer | demo-group             | Per-message logging             |
+| OrderQuantityStream | order-quantity-streams | Running quantity sum per item   |
+
+Both consume from `demo-topic` independently — every order is processed by both.
 
 ---
 

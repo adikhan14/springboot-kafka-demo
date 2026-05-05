@@ -21,6 +21,8 @@ kafka:
     group-id: demo-group
     auto-offset-reset: earliest
     isolation-level: read_committed
+  streams:
+    application-id: order-quantity-streams
   topic:
     demo:
       name: demo-topic

@@ -1,7 +1,7 @@
 package com.kafka.demo.config;
 
-import com.kafka.demo.model.Message;
-import com.kafka.demo.serializer.MessageSerializer;
+import com.kafka.demo.model.Order;
+import com.kafka.demo.serializer.OrderSerializer;
 import org.apache.kafka.clients.producer.ProducerConfig;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,20 +33,20 @@ public class KafkaProducerConfig {
     private String transactionIdPrefix;
 
     @Bean
-    public ProducerFactory<String, Message> producerFactory() {
+    public ProducerFactory<String, Order> producerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ProducerConfig.ACKS_CONFIG, acks);
         props.put(ProducerConfig.RETRIES_CONFIG, retries);
         props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, enableIdempotence);
-        DefaultKafkaProducerFactory<String, Message> factory =
-                new DefaultKafkaProducerFactory<>(props, new StringSerializer(), new MessageSerializer());
+        DefaultKafkaProducerFactory<String, Order> factory =
+                new DefaultKafkaProducerFactory<>(props, new StringSerializer(), new OrderSerializer());
         factory.setTransactionIdPrefix(transactionIdPrefix);
         return factory;
     }
 
     @Bean
-    public KafkaTemplate<String, Message> kafkaTemplate() {
+    public KafkaTemplate<String, Order> kafkaTemplate() {
         return new KafkaTemplate<>(producerFactory());
     }
 }

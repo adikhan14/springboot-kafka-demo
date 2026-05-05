@@ -1,7 +1,7 @@
 package com.kafka.demo.config;
 
-import com.kafka.demo.model.Message;
-import com.kafka.demo.serializer.MessageDeserializer;
+import com.kafka.demo.model.Order;
+import com.kafka.demo.serializer.OrderDeserializer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.springframework.beans.factory.annotation.Value;
@@ -33,19 +33,19 @@ public class KafkaConsumerConfig {
     private String isolationLevel;
 
     @Bean
-    public ConsumerFactory<String, Message> consumerFactory() {
+    public ConsumerFactory<String, Order> consumerFactory() {
         Map<String, Object> props = new HashMap<>();
         props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
         props.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
         props.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, autoOffsetReset);
         props.put(ConsumerConfig.ISOLATION_LEVEL_CONFIG, isolationLevel);
         props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new MessageDeserializer());
+        return new DefaultKafkaConsumerFactory<>(props, new StringDeserializer(), new OrderDeserializer());
     }
 
     @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, Message> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, Message> factory =
+    public ConcurrentKafkaListenerContainerFactory<String, Order> kafkaListenerContainerFactory() {
+        ConcurrentKafkaListenerContainerFactory<String, Order> factory =
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);

@@ -12,10 +12,10 @@
   ],
   "item": [
     {
-      "name": "Messages",
+      "name": "Orders",
       "item": [
         {
-          "name": "Publish Message (with ID)",
+          "name": "Publish Order (with ID)",
           "request": {
             "method": "POST",
             "header": [
@@ -25,13 +25,13 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/messages",
+              "raw": "{{baseUrl}}/api/orders",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "messages"]
+              "path": ["api", "orders"]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"id\": \"msg-001\",\n  \"content\": \"Hello Kafka!\"\n}",
+              "raw": "{\n  \"orderId\": \"ord-001\",\n  \"itemName\": \"Laptop\",\n  \"quantity\": 2\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -41,7 +41,7 @@
           }
         },
         {
-          "name": "Publish Message (auto-generated ID)",
+          "name": "Publish Order (auto-generated ID)",
           "request": {
             "method": "POST",
             "header": [
@@ -51,13 +51,39 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/api/messages",
+              "raw": "{{baseUrl}}/api/orders",
               "host": ["{{baseUrl}}"],
-              "path": ["api", "messages"]
+              "path": ["api", "orders"]
             },
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"content\": \"Hello Kafka with auto ID!\"\n}",
+              "raw": "{\n  \"itemName\": \"Keyboard\",\n  \"quantity\": 5\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publish Order (same item, add quantity)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/orders",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "orders"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"itemName\": \"Laptop\",\n  \"quantity\": 3\n}",
               "options": {
                 "raw": {
                   "language": "json"
