@@ -1,0 +1,72 @@
+{
+  "info": {
+    "name": "springboot-kafka-demo",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8080",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Messages",
+      "item": [
+        {
+          "name": "Publish Message (with ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"id\": \"msg-001\",\n  \"content\": \"Hello Kafka!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "Publish Message (auto-generated ID)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/api/messages",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "messages"]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"content\": \"Hello Kafka with auto ID!\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

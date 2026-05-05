@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: springboot-kafka-demo
+
+server:
+  port: 8080
+
+logging:
+  level:
+    org.apache.kafka.clients.producer.internals.TransactionManager: DEBUG
+    org.springframework.kafka.core.KafkaTemplate: DEBUG
+
+kafka:
+  bootstrap-servers: localhost:9092,localhost:9094,localhost:9095
+  producer:
+    acks: all
+    retries: 3
+    enable-idempotence: true
+    transaction-id-prefix: demo-tx-
+  consumer:
+    group-id: demo-group
+    auto-offset-reset: earliest
+    isolation-level: read_committed
+  topic:
+    demo:
+      name: demo-topic
+      partitions: 3
+      replication-factor: 3
