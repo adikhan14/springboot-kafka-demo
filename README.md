@@ -134,6 +134,8 @@ IntelliJ run configurations are pre-configured under `.idea/runConfigurations/`:
 
 Each instance has producer, consumer, and Kafka Streams functionality. All instances share `demo-group` for the regular consumer, so Kafka distributes the 3 partitions across running instances. Each instance also runs an independent Kafka Streams pipeline under `order-quantity-streams`.
 
+Each instance writes Kafka Streams state to its own directory (`/tmp/kafka-streams/<port>`) to avoid state directory conflicts when running multiple instances on the same machine.
+
 To run via Maven on a custom port:
 
 ```bash
@@ -188,10 +190,11 @@ Import `postman collection/springboot-kafka-demo.postman_collection.json` into P
 ```
 demo-topic
     └── KStream<orderId, Order>
-            └── groupBy(itemName)
-                    └── aggregate(sum of quantity)
-                            └── KTable<itemName, Long>
-                                    └── toStream → log
+            └── deduplicate (order-dedupe-store)
+                    └── groupBy(itemName)
+                            └── aggregate(sum of quantity)
+                                    └── KTable<itemName, Long>
+                                            └── toStream → log
 ```
 
 Each time a new order arrives, the log prints the updated running total for that item:
@@ -200,7 +203,18 @@ Each time a new order arrives, the log prints the updated running total for that
 [Streams] Item [Laptop] running total quantity: 5
 ```
 
-The aggregated state is stored in a local state store named `item-quantity-store`.
+If the same `orderId` arrives again with the same `itemName` and `quantity`, it is dropped before aggregation:
+
+```
+[Streams] Duplicate ignored [ord-001]: item=Laptop, qty=2
+```
+
+**State stores:**
+
+| Store                | Key       | Value                  | Purpose                          |
+|----------------------|-----------|------------------------|----------------------------------|
+| `order-dedupe-store` | orderId   | "itemName:quantity"    | Detect and drop duplicate orders |
+| `item-quantity-store`| itemName  | Long (total quantity)  | Running quantity sum per item    |
 
 **Consumer groups in play:**
 
